@@ -4,6 +4,7 @@
 *.obj
 *.elf
 tags
+*CLI
 
 # Precompiled Headers
 *.gch

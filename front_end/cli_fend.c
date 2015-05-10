@@ -71,6 +71,7 @@ struct cli_context {
 } *cli_context;
 
 int cli_api_clear(void *);
+int cli_api_help(void *);
 int cli_api_exit(void *);
 int cli_api_list(void *);
 
@@ -81,9 +82,22 @@ struct cli_commands {
     struct cli_commands *sub_list;
 } cli_cmd_list[] = {
     {"clear", 0, cli_api_clear, NULL},
+    {"help", 0, cli_api_help, &cli_cmd_list[0]},
     {"list", 0, cli_api_list, NULL},
     {"exit", 0, cli_api_exit, NULL},
 };
+
+#define CLI_CMD_SIZE ((sizeof(cli_cmd_list)) / (sizeof(cli_cmd_list[0])))
+
+int cli_api_help(void *ptr)
+{
+    int ret;
+    int i;
+
+    printf("available commands:\n");
+    for (i = 0; i < CLI_CMD_SIZE; i++)
+        printf("\t%s\n", cli_cmd_list[i].cmd);
+}
 
 int cli_api_clear(void *ptr)
 {
@@ -130,12 +144,11 @@ int cli_api_list(void *ptr)
     return ret;
 }
 
-#define CLI_CMD_SIZE ((sizeof(cli_cmd_list)) / (sizeof(cli_cmd_list[0])))
-
 void cli_process(void)
 {
     int i;
     char *inp = read_input();
+    int cmd_unavailable = 1;
 
     if (!inp) {
         printf("Invalid Characters\n");
@@ -143,9 +156,16 @@ void cli_process(void)
     }
 
     for (i = 0; i < CLI_CMD_SIZE; i++) {
-        if (!strcmp(cli_cmd_list[i].cmd, inp))
+        if (!strcmp(cli_cmd_list[i].cmd, inp)) {
+            cmd_unavailable = 0;
             cli_cmd_list[i].cmd_exec((void *)cli_cmd_list[i].sub_list);
+        }
     }
+
+    if (cmd_unavailable)
+        printf("command %s unavailable\n", inp);
+
+    free(inp);
 }
 
 int main(int argc, char *argv[])
