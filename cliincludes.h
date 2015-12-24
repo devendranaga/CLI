@@ -15,6 +15,8 @@
 #include <sys/un.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/signalfd.h>
+#include <signal.h>
 
 #endif
 

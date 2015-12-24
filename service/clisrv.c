@@ -27,6 +27,8 @@ void libev_service_client(void *app_arg)
 	if (priv->cli_client < 0)
 		return;
 
+	fprintf(stderr, "client connected %d\n", priv->cli_client);
+	
 	libev_register_sock(priv->cli_client, priv->libev_magic, priv, libev_client_data_recv);
 }
 

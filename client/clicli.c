@@ -28,11 +28,6 @@ void cli_client_cmdline_opts_parse(
 	}
 }
 
-struct command_subsections {
-	int section_len;
-	char section[1000];
-};
-
 void print_secs(struct command_subsections *ss, int sslen)
 {
 	int i;
@@ -79,13 +74,29 @@ newl:
 	return ix;
 }
 
+static struct clicmds {
+	struct cli_commands *cmd;
+} _cmds[] = {
+	&show_cmd,
+};
+
 int cli_process_command(
 	            struct command_subsections *ss,
 	            int sslen,
 	            struct cli_client_priv *priv
 	                   )
 {
+	int len = sizeof(_cmds) / sizeof(_cmds[0]);
+	int i;
+	char *main_cmd = ss[0].section;
 
+	for (i = 0; i < len; i++) {
+		struct cli_commands *cmd = _cmds[i].cmd;
+
+		if (!strcmp(cmd->command, main_cmd)) {
+			cmd->cmdfunc(ss, sslen, cmd, priv);
+		}
+	}
 }
 
 int cli_parser(struct cli_client_priv *priv)
@@ -98,6 +109,9 @@ int cli_parser(struct cli_client_priv *priv)
 
 		fprintf(stderr, "%s ", cli_name);
 		fgets(input, sizeof(input), stdin);
+
+		memset(sections, 0, sizeof(sections));
+
 		parsed_len = cli_parse_by_space(
 								sections,
 								sec_len,
@@ -105,9 +119,10 @@ int cli_parser(struct cli_client_priv *priv)
 								strlen(input),
 								priv
     								   );
-#ifdef CONFIG_CLI_DEBUG
+#ifndef CONFIG_CLI_DEBUG
 		print_secs(sections, parsed_len);
 #endif
+		cli_process_command(sections, parsed_len, priv);
 	}
 
 	return -1;
@@ -116,8 +131,12 @@ int cli_parser(struct cli_client_priv *priv)
 int cli_client_initiate_server_conn(struct cli_client_priv *priv)
 {
 	priv->server_conn = libev_create_unix_tcp_conn(CLI_SRV_SOCK);
-	if (priv->server_conn < 0)
+	if (priv->server_conn < 0) {
+		fprintf(stderr, "failed to initiate CLI service connection\n");
 		return -1;
+	}
+
+	return 0;
 }
 
 void cli_client_deinitiate_server_conn(struct cli_client_priv *priv)
@@ -134,10 +153,19 @@ int main(int argc, char **argv)
 	if (!priv)
 		return -1;
 
+	// register signals to block the cli term
+	// signal(SIGINT, SIG_IGN);
+	// signal(SIGQUIT, SIG_IGN);
+	// signal(SIGPIPE, SIG_IGN);
+
 	cli_client_cmdline_opts_parse(argc, argv, priv);
 
 	priv->libev_priv = libev_system_init();
 	if (!priv->libev_priv)
+		return -1;
+
+	ret = cli_client_initiate_server_conn(priv);
+	if (ret)
 		return -1;
 
 	cli_parser(priv);

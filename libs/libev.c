@@ -13,6 +13,8 @@ struct libev_socket_list {
 struct libev_socket_context {
     int max_fd;
     fd_set fds;
+    sigset_t sigmask;
+    int sfd;
     struct libev_socket_list *head, *tail;
 };
 
@@ -23,12 +25,31 @@ struct libev_context {
 void* libev_system_init()
 {
     struct libev_context *context;
+    struct libev_socket_context *sock_context;
 
     context = calloc(1, sizeof(struct libev_context));
     if (!context)
         return NULL;
 
+    sock_context = calloc(1, sizeof(struct libev_socket_context));
+    if (!sock_context)
+        return -1;
+
+    context->sock_context = sock_context;
+
+    sigemptyset(&sock_context->sigmask);
+
+    sock_context->sfd = signalfd(-1, &sock_context->sigmask, 0);
+    if (sock_context->sfd < 0)
+        return -1;
+
+    FD_SET(sock_context->sfd, &sock_context->fds);
+
     return context;
+
+err:
+    free(context);
+    return NULL;
 }
 
 void libev_system_deinit(void *ctx)
@@ -42,11 +63,7 @@ int _libev_register_sock(int sock, void *ctx, void *app_arg, void (*cbfunc)(void
     struct libev_socket_list *sock_node;
     struct libev_socket_context *sock_context;
 
-    sock_context = calloc(1, sizeof(struct libev_socket_context));
-    if (!sock_context)
-        return -1;
-
-    context->sock_context = sock_context;
+    sock_context = context->sock_context;
 
     if (sock > sock_context->max_fd)
         sock_context->max_fd = sock;
@@ -148,6 +165,17 @@ void libev_sock_event_func(fd_set *allfd, struct libev_context *context)
     }
 }
 
+int libev_signal_func(struct libev_context *context)
+{
+    struct signalfd_siginfo siginfo;
+    struct libev_socket_context *sock_context = context->sock_context;
+    int ret;
+
+    ret = read(sock_context->sfd, &siginfo, sizeof(siginfo));
+    if (ret == sizeof(siginfo))  {
+    }
+}
+
 void libev_main(void *ctx)
 {
     struct libev_context *context = ctx;
@@ -160,7 +188,10 @@ void libev_main(void *ctx)
 
         ret = select(context->sock_context->max_fd + 1, &allfd, NULL, NULL, &tv);
         if (ret > 0) {
-            libev_sock_event_func(&allfd, context);
+            if (FD_ISSET(context->sock_context->sfd, &allfd)) {
+            } else {
+                libev_sock_event_func(&allfd, context);
+            }
         } else if (ret == 0) {
         }
     }
@@ -181,8 +212,10 @@ int libev_unix_tcp_init(void *ctx, char *path, void (*accept_func)(void *args), 
 
     unlink(path);
 
-    if (bind(sock, (struct sockaddr *)&srv, sizeof(srv)) < 0)
+    if (bind(sock, (struct sockaddr *)&srv, strlen(srv.sun_path) + sizeof(srv.sun_family)) < 0)
         goto err;
+
+    listen(sock, 4);
 
     libev_register_tcp_unix_sock(sock, context, app_arg, accept_func);
     return sock;
@@ -228,8 +261,10 @@ int libev_create_unix_tcp_conn(char *path)
     srv.sun_family = AF_UNIX;
     strcpy(srv.sun_path, path);
 
-    if (connect(sock, (struct sockaddr *)&srv, sizeof(srv) < 0))
+    if (connect(sock, (struct sockaddr *)&srv, strlen(srv.sun_path) + sizeof(srv.sun_family)) < 0) {
+        perror("connect");
         goto err;
+    }
 
     return sock;
 
@@ -242,4 +277,30 @@ void libev_unix_tcp_deinit(void *ctx, int sock)
 {
     close(sock);
     libev_unregister_tcp_unix_sock(sock, ctx);
+}
+
+int _libev_signal_register(int sig, struct libev_context *context)
+{
+    struct libev_socket_context *sock_context;
+
+    sock_context = context->sock_context;
+
+    sigaddset(&sock_context->sigmask, sig);
+
+    if (sigprocmask(SIG_UNBLOCK, &sock_context->sigmask, NULL) == -1)
+        return -1;
+
+    if (sigprocmask(SIG_BLOCK, &sock_context->sigmask, NULL) == -1)
+        return -1;
+
+    return 0;
+}
+
+int libev_signal_register(int sig, struct libev_context *context)
+{
+    return _libev_signal_register(sig, context);
+}
+
+int libev_term_signal_register(struct libev_context *context)
+{
 }

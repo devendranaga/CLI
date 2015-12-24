@@ -2,7 +2,7 @@
 #include "clicmd.h"
 
 void cli_service_show(
-	             char *args,
+	             struct command_subsections *ss,
 	             int args_len,
 	             struct cli_commands *cmd,
 	             void *priv);
@@ -22,13 +22,13 @@ void cli_service_help_show(
 				 void *priv);
 
 void cli_service_show_date(
-				 char *args,
+				 struct command_subsections *ss,
 				 int args_len,
 				 struct cli_commands *cmd,
 				 void *priv);
 
 void cli_service_show_cli_version(
-				 char *args,
+				 struct command_subsections *ss,
 				 int args_len,
 				 struct cli_commands *cmd,
 				 void *priv);
@@ -51,7 +51,7 @@ struct cli_commands show_subcmd[] = {
 	},
 };
 
-struct cli_commands show_cmd[] = {
+struct cli_commands show_cmd = {
 	"show",
 	cli_service_help_show,
 	cli_service_show,
@@ -60,7 +60,7 @@ struct cli_commands show_cmd[] = {
 };
 
 void cli_service_show_cli_version(
-						 char *args,
+						 struct command_subsections *ss,
 						 int args_len,
 						 struct cli_commands *cmd,
 						 void *priv
@@ -70,7 +70,7 @@ void cli_service_show_cli_version(
 }
 
 void cli_service_show_date(
-						 char *args,
+						 struct command_subsections *ss,
 						 int args_len,
 						 struct cli_commands *cmd,
 						 void *priv
@@ -80,13 +80,29 @@ void cli_service_show_date(
 }
 
 void cli_service_show(
-					 char *args,
+					 struct command_subsections *ss,
 					 int args_len,
 					 struct cli_commands *cmd,
 					 void *priv
 					 )
 {
+	int i, j;
+	int found = 0;
+	int len = sizeof(show_subcmd) / sizeof(show_subcmd[0]);
 
+	for (i = 0; i < len; i++) {
+		for (j = 0; j < args_len; j++) {
+			if (!strcmp(show_subcmd[i].command, ss[j].section)) {
+				found = 1;
+				struct cli_commands *sc = cmd->sub_cmd;
+
+				sc[i].cmdfunc(sc, args_len - 1, sc, priv);
+			}
+		}
+	}
+
+	if (!found)
+		cli_service_help_show(&show_cmd, priv);
 }
 
 void cli_service_help_show_date(
