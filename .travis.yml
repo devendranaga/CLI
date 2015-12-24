@@ -1,0 +1,6 @@
+language: c
+compiler: gcc
+sudo: true
+before install:
+  - sudo pip install cpp-coveralls
+script: make clean ; make all
