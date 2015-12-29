@@ -4,9 +4,13 @@ struct libev_socket_list {
     int sock;
     libev_sock_type_t socktype;
     void *app_arg;
-    void (*accept_func)(void *args);
-    void (*recv_func)(void *args);
-    void (*send_func)(void *args);
+    void (*accept_func)(int sock, void *args);
+    void (*recv_func)(int sock, void *args);
+    void (*send_func)(int sock, void *args);
+#define LIBEV_SOCK_HAS_TIMEOUT(__timeout) { \
+    (((__timeout.tv_sec) != 0) || ((__timeout.tv_usec) != 0)) \
+}
+    struct timeval timeout;
     struct libev_socket_list *next;
 };
 
@@ -18,8 +22,25 @@ struct libev_socket_context {
     struct libev_socket_list *head, *tail;
 };
 
+struct libev_signal_context {
+    int sig;
+    void *app_arg;
+    void (*signal_func)(int sig, void *args);
+    struct libev_signal_context *next;
+};
+
+struct libev_timer_context {
+    long sec;
+    long usec;
+    int timer_fd;
+    void (*timer_func)(void *args);
+    struct libev_timer_context *next;
+};
+
 struct libev_context {
     struct libev_socket_context *sock_context;
+    struct libev_timer_context *timer_context;
+    struct libev_signal_context *signal_context;
 };
 
 void* libev_system_init()
@@ -33,7 +54,7 @@ void* libev_system_init()
 
     sock_context = calloc(1, sizeof(struct libev_socket_context));
     if (!sock_context)
-        return -1;
+        return NULL;
 
     context->sock_context = sock_context;
 
@@ -41,7 +62,7 @@ void* libev_system_init()
 
     sock_context->sfd = signalfd(-1, &sock_context->sigmask, 0);
     if (sock_context->sfd < 0)
-        return -1;
+        return NULL;
 
     FD_SET(sock_context->sfd, &sock_context->fds);
 
@@ -57,7 +78,13 @@ void libev_system_deinit(void *ctx)
     free(ctx);
 }
 
-int _libev_register_sock(int sock, void *ctx, void *app_arg, void (*cbfunc)(void *app_arg), libev_sock_type_t socktype)
+int _libev_register_sock(
+                    int sock,
+                    void *ctx,
+                    void *app_arg,
+                    void (*cbfunc)(int sock, void *app_arg),
+                    libev_sock_type_t socktype
+                        )
 {
     struct libev_context *context = ctx;
     struct libev_socket_list *sock_node;
@@ -89,7 +116,7 @@ int _libev_register_sock(int sock, void *ctx, void *app_arg, void (*cbfunc)(void
         break;
         case LIBEV_SOCK_TYPE_TCP_RECV:
             sock_node->recv_func = cbfunc;
-        break;        
+        break;
     }
     sock_node->sock = sock;
     sock_node->socktype = socktype;
@@ -97,14 +124,28 @@ int _libev_register_sock(int sock, void *ctx, void *app_arg, void (*cbfunc)(void
     return 0;
 }
 
-int libev_register_tcp_unix_sock(int sock, void *ctx, void *app_arg, void (*accept_func)(void *app_arg))
+int libev_register_tcp_unix_sock(
+                            int sock,
+                            void *ctx,
+                            void *app_arg,
+                            void (*accept_func)(int sock, void *app_arg)
+                                )
 {
-    return _libev_register_sock(sock, ctx, app_arg, accept_func, LIBEV_SOCK_TYPE_TCP_UNIX);
+    return _libev_register_sock(sock, ctx,
+                                app_arg, accept_func,
+                                LIBEV_SOCK_TYPE_TCP_UNIX);
 }
 
-int libev_register_sock(int sock, void *ctx, void *app_arg, void (*recv_func)(void *app_arg))
+int libev_register_sock(
+                    int sock,
+                    void *ctx,
+                    void *app_arg,
+                    void (*recv_func)(int sock, void *app_arg)
+                       )
 {
-    return _libev_register_sock(sock, ctx, app_arg, recv_func, LIBEV_SOCK_TYPE_TCP_RECV);
+    return _libev_register_sock(sock, ctx,
+                                app_arg, recv_func,
+                                LIBEV_SOCK_TYPE_TCP_RECV);
 }
 
 static struct libev_socket_list *
@@ -113,12 +154,33 @@ libev_get_socket_node_by_sock(int sock, struct libev_context *context)
     struct libev_socket_context *sock_context = context->sock_context;
     struct libev_socket_list *sock_node;
 
-    for (sock_node = sock_context->head; sock_node; sock_node = sock_node->next) {
+    for (sock_node = sock_context->head;
+            sock_node;
+            sock_node = sock_node->next) {
+
         if (sock_node->sock == sock)
             return sock_node;
     }
 
     return NULL;
+}
+
+void _libev_unregister_sock(int sock, void *app_arg)
+{
+    struct libev_context *context = app_arg;
+    struct libev_socket_list *node;
+
+    node = libev_get_socket_node_by_sock(sock, context);
+    if (!node)
+        return;
+
+    FD_CLR(node->sock, &context->sock_context->fds);
+
+}
+
+void libev_unregister_sock(int sock, void *app_arg)
+{
+    _libev_unregister_sock(sock, app_arg);
 }
 
 void libev_unregister_tcp_unix_sock(int sock, void *ctx)
@@ -136,13 +198,13 @@ void libev_unregister_tcp_unix_sock(int sock, void *ctx)
 void libev_accept_func(struct libev_context *context,
                        struct libev_socket_list *sock_node)
 {
-    sock_node->accept_func(sock_node->app_arg);
+    sock_node->accept_func(sock_node->sock, sock_node->app_arg);
 }
 
 void libev_recv_func(struct libev_context *context,
                      struct libev_socket_list *sock_node)
 {
-    sock_node->recv_func(sock_node->app_arg);
+    sock_node->recv_func(sock_node->sock, sock_node->app_arg);
 }
 
 void libev_sock_event_func(fd_set *allfd, struct libev_context *context)
@@ -197,7 +259,7 @@ void libev_main(void *ctx)
     }
 }
 
-int libev_unix_tcp_init(void *ctx, char *path, void (*accept_func)(void *args), void *app_arg)
+int libev_unix_tcp_init(void *ctx, char *path, void (*accept_func)(int sock, void *args), void *app_arg)
 {
     int sock;
     struct sockaddr_un srv;
@@ -225,7 +287,7 @@ err:
     return -1;
 }
 
-int libev_unix_tcp_conn(void *ctx, char *path, void (*recv_func)(void *args), void *app_arg)
+int libev_unix_tcp_conn(void *ctx, char *path, void (*recv_func)(int sock, void *args), void *app_arg)
 {
     int sock;
     struct sockaddr_un srv;
@@ -303,4 +365,16 @@ int libev_signal_register(int sig, struct libev_context *context)
 
 int libev_term_signal_register(struct libev_context *context)
 {
+    int ret;
+
+    ret = _libev_signal_register(SIGINT, context);
+    if (ret)
+        return ret;
+
+    ret = _libev_signal_register(SIGQUIT, context);
+    if (ret)
+        return ret;
+
+    return 0;
 }
+

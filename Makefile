@@ -7,8 +7,8 @@ CLI_CLIENT_SRC += client/clicli.c
 CLI_LIB_SRC += libs/libev.c
 
 CLI_LIB_NAME = libcliev.a
-CLI_CLIENT_NAME = CLIC
-CLI_SERVICE_NAME = CLIS
+CLI_CLIENT_NAME = cli_client
+CLI_SERVICE_NAME = cli_service
 
 CLI_CC = gcc
 CLI_AR = ar
