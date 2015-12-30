@@ -42,5 +42,5 @@ $(CLI_SERVICE_NAME): $(CLI_SERVICE_OBJ)
 	${CLI_CC} $(CLI_INCL) $(CLI_CFLAGS) -c -o $@ $<
 
 clean:
-	rm -rf $(LIBEVCLI_LIB_NAME) $(CLI_CLIENT_NAME) $(CLI_SERVICE_NAME) *.o libs/eventlib/*.o  libs/netlib/*.o client/*.o service/*.o
+	rm -rf $(LIBEVCLI_LIB_NAME) $(LIBNETCLI_LIB_NAME) $(CLI_CLIENT_NAME) $(CLI_SERVICE_NAME) *.o libs/eventlib/*.o  libs/netlib/*.o client/*.o service/*.o
 

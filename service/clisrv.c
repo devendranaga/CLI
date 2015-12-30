@@ -1,4 +1,5 @@
 #include "libev.h"
+#include "libnet.h"
 #include "cliintf.h"
 #include "clisrv.h"
 
@@ -105,6 +106,40 @@ static int __cli_service_show_cli_version(int sock, CliCommands_t cmd,
     return cli_service_send_response(sock, cmd, subcmd, res, exec_buf, ret_len);
 }
 
+static int __cli_service_show_interfaces(int sock, CliCommands_t cmd,
+                                         CliSubCommands_t subcmd,
+                                         struct cli_service_priv *priv)
+{
+    struct libnet_if *ifi = NULL, *ifa;
+    CliCommandRes_t res;
+    int ret;
+    int len = 0, off = 0;
+    char buff[1000];
+
+    ret = libnet_get_all_ifs(NULL, &ifi);
+    if (ret) {
+        res = CLI_COMMAND_RES_FAIL;
+        goto err_send;
+    }
+
+    memset(buff, 0, sizeof(buff));
+
+    off += 4;
+    for (ifa = ifi; ifa; ifa = ifa->next) {
+        struct cli_iflist ifitem;
+
+        strcpy(ifitem.ifname, ifa->ifname);
+        memcpy(buff + off, &ifitem, sizeof(struct cli_iflist));
+        off += sizeof(struct cli_iflist);
+        len++;
+    }
+
+    memcpy(&buff[0], &len, sizeof(int));
+
+err_send:
+    return cli_service_send_response(sock, cmd, subcmd, res, buff, off);
+}
+
 void libev_client_data_recv(int sock, void *app_arg)
 {
     struct cli_service_priv *priv = app_arg;
@@ -137,6 +172,12 @@ void libev_client_data_recv(int sock, void *app_arg)
                             __cli_service_show_cli_version(sock, req->command,
                                                            req->sub_command,
                                                            priv);
+                            break;
+                        }
+                        case CLI_SUBCOMMAND_SHOW_INTERFACES: {
+                            __cli_service_show_interfaces(sock, req->command,
+                                                          req->sub_command,
+                                                          priv);
                             break;
                         }
                     }

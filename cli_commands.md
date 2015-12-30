@@ -3,7 +3,7 @@
 #### 1. show commands:
 no | command | description|
 ---|---------|------------|
-1  | show interface `nw_if` |             shows network interfaces |
+1  | show interfaces |             shows network interfaces |
 2  | show interface brief `nw_if` |       shows brief information about the interface |
 3  | show interface status `nw_if` |      shows the network interface status (up / down) |
 4  | show interface mac `nw_if` |         shows the network interface mac |

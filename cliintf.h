@@ -25,7 +25,12 @@ typedef enum {
 typedef enum {
     CLI_SUBCOMMAND_SHOW_DATE,
     CLI_SUBCOMMAND_SHOW_CLI_VER,
+    CLI_SUBCOMMAND_SHOW_INTERFACES,
 } CliSubCommands_t;
+
+struct cli_iflist {
+    char ifname[50];
+} __attribute__((__packed__));
 
 struct cli_interface_cmdreq {
     CliCommands_t command;
