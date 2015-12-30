@@ -8,6 +8,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <errno.h>
 #include <time.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -17,6 +18,7 @@
 #include <sys/un.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <ifaddrs.h>
 #include <sys/signalfd.h>
 #include <signal.h>
 

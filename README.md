@@ -1,2 +1,3 @@
 # CLI
-A CLI based implementation for Linux based embedded devices
+
+Cisco like CLI for any linux box.
