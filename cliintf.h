@@ -39,7 +39,8 @@ struct cli_interface_cmdresp {
     CliCommands_t command;
     CliSubCommands_t sub_command;
     CliCommandRes_t res;
-    uint8_t resp[0];
+    uint16_t datalen;
+    uint8_t data[0];
 } __attribute__((__packed__));
 
 struct cli_interface {

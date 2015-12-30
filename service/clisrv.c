@@ -15,14 +15,38 @@ void cli_service_cmdargs_parse(int argc, char **argv)
     }
 }
 
-static int __libev_exec_command_show_cli_version(char *version,
+int cli_service_send_response(int sock,
+                              CliCommands_t cmd,
+                              CliSubCommands_t subcmd,
+                              CliCommandRes_t result,
+                              uint8_t *data, int len)
+{
+    uint8_t buf[1000];
+    struct cli_interface *intf;
+    struct cli_interface_cmdresp *resp;
+
+    intf = (struct cli_interface *)buf;
+    resp = (struct cli_interface_cmdresp *)intf->data;
+
+    resp->command = cmd;
+    resp->sub_command = subcmd;
+    resp->res = result;
+    resp->datalen = len;
+    memcpy(resp->data, data, len);
+
+    intf->len = sizeof(struct cli_interface_cmdresp) + len;
+
+    return send(sock, buf, sizeof(*intf) + intf->len, 0);
+}
+
+static int __cli_service_exec_command_show_cli_version(char *version,
                                                  int version_len)
 {
     strncpy(version, "cli version beta", version_len);
     return strlen(version) + 1;
 }
 
-static int __libev_exec_command_show_date(char *date, int date_len)
+static int __cli_service_exec_command_show_date(char *date, int date_len)
 {
     time_t now;
     struct tm *t;
@@ -43,6 +67,42 @@ static int __libev_exec_command_show_date(char *date, int date_len)
         ret = -1;
 
     return ret;
+}
+
+static int __cli_service_show_date(int sock, CliCommands_t cmd,
+                                   CliSubCommands_t subcmd,
+                                   struct cli_service_priv *priv)
+{
+    char exec_buf[100];
+    int ret_len;
+    CliCommandRes_t res;
+
+    ret_len = __cli_service_exec_command_show_date(exec_buf,
+                                                   sizeof(exec_buf));
+    if (ret_len == -1)
+        res = CLI_COMMAND_RES_FAIL;
+    else
+        res = CLI_COMMAND_RES_SUCCESS;
+
+    return cli_service_send_response(sock, cmd, subcmd, res, exec_buf, ret_len);
+}
+
+static int __cli_service_show_cli_version(int sock, CliCommands_t cmd,
+                                          CliSubCommands_t subcmd,
+                                          struct cli_service_priv *priv)
+{
+    char exec_buf[100];
+    int ret_len;
+    CliCommandRes_t res;
+
+    ret_len = __cli_service_exec_command_show_cli_version(exec_buf,
+                                                          sizeof(exec_buf));
+    if (ret_len == -1)
+        res = CLI_COMMAND_RES_FAIL;
+    else
+        res = CLI_COMMAND_RES_SUCCESS;
+
+    return cli_service_send_response(sock, cmd, subcmd, res, exec_buf, ret_len);
 }
 
 void libev_client_data_recv(int sock, void *app_arg)
@@ -69,10 +129,21 @@ void libev_client_data_recv(int sock, void *app_arg)
                 case CLI_COMMAND_SHOW: {
                     switch (req->sub_command) {
                         case CLI_SUBCOMMAND_SHOW_DATE: {
+                            __cli_service_show_date(sock, req->command,
+                                                    req->sub_command, priv);
+                            break;
+                        }
+                        case CLI_SUBCOMMAND_SHOW_CLI_VER: {
+                            __cli_service_show_cli_version(sock, req->command,
+                                                           req->sub_command,
+                                                           priv);
+                            break;
                         }
                     }
+                    break;
                 }
             }
+            break;
         }
     }
 }
@@ -86,7 +157,7 @@ void libev_service_client(int sock, void *app_arg)
         return;
 
     fprintf(stderr, "client connected %d\n", priv->cli_client);
-    
+
     libev_register_sock(priv->cli_client,
                         priv->libev_magic,
                         priv, libev_client_data_recv);

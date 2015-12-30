@@ -4,7 +4,7 @@ CLI_SERVICE_SRC += service/clisrv.c
 CLI_CLIENT_SRC += client/cli_show.c
 CLI_CLIENT_SRC += client/clicli.c
 
-CLI_LIB_SRC += libs/libev.c
+CLI_LIB_SRC += libs/eventlib/libev.c
 
 CLI_LIB_NAME = libcliev.a
 CLI_CLIENT_NAME = cli_client
@@ -14,7 +14,7 @@ CLI_CC = gcc
 CLI_AR = ar
 CLI_AR_ARGS = rcv
 CLI_CFLAGS = -Wall
-CLI_INCL = -I. -Ilibs/ -Iclient/
+CLI_INCL = -I. -Ilibs/eventlib/ -Iclient/
 
 CLI_SERVICE_OBJ = $(patsubst %.c, %.o, ${CLI_SERVICE_SRC})
 CLI_CLIENT_OBJ = $(patsubst %.c, %.o, ${CLI_CLIENT_SRC})
