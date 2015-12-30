@@ -65,6 +65,47 @@ struct cli_commands show_cmd = {
     sizeof(show_subcmd) / sizeof(show_subcmd[0])
 };
 
+void cli_service_recv_timeout(int timeout,
+                              int sock,
+                              struct command_subsections *ss,
+                              int args_len,
+                              struct cli_commands *cmd,
+                              void *priv)
+{
+    struct timeval tv = {
+        .tv_sec = timeout,
+        .tv_usec = 0,
+    };
+
+    fd_set fds;
+    int ret;
+
+    FD_ZERO(&fds);
+    FD_SET(sock, &fds);
+
+    ret = select(sock + 1, &fds, NULL, NULL, &tv);
+    if (ret == 0) {
+        fprintf(stderr, "failed to execute command (timedout)\n");
+    } else if (ret > 0) {
+        uint8_t buff[1000];
+
+        ret = recv(sock, buff, sizeof(buff), 0);
+        if (ret > 0) {
+            struct cli_interface *intf;
+            struct cli_interface_cmdresp *resp;
+
+            intf = (struct cli_interface *)buff;
+            resp = (struct cli_interface_cmdresp *)intf->data;
+
+            if (resp->res == CLI_COMMAND_RES_FAIL) {
+                fprintf(stderr, "failed to execute command\n");
+            } else {
+                fprintf(stderr, "%s\n", resp->data);
+            }
+        }
+    }
+}
+
 void cli_service_show_cli_version(
                          struct command_subsections *ss,
                          int args_len,
@@ -90,7 +131,11 @@ void cli_service_show_cli_version(
 
     struct cli_client_priv *context = priv;
 
-    send(context->server_conn, buff, sizeof(*req) + sizeof(*intf), 0);
+    ret = send(context->server_conn, buff, sizeof(*req) + sizeof(*intf), 0);
+    if (ret > 0) {
+        cli_service_recv_timeout(5, context->server_conn,
+                                 ss, args_len, cmd, priv);
+    }
 }
 
 void cli_service_show_date(
@@ -120,6 +165,10 @@ void cli_service_show_date(
 
     ret = send(context->server_conn,
                buff, sizeof(*req) + sizeof(*intf), 0);
+    if (ret > 0) {
+        cli_service_recv_timeout(5, context->server_conn,
+                                 ss, args_len, cmd, priv);
+    }
 }
 
 void cli_service_show(

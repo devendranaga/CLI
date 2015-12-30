@@ -116,7 +116,7 @@ int cli_parser(struct cli_client_priv *priv)
                                 strlen(input),
                                 priv
                                        );
-#ifndef CONFIG_CLI_DEBUG
+#ifdef CONFIG_CLI_DEBUG
         print_secs(sections, parsed_len);
 #endif
         cli_process_command(sections, parsed_len, priv);
