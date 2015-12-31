@@ -40,9 +40,9 @@ no | description |
 #### 3. net: (needs privileges)
 no | command | description |
 ---|---------|-------------|
-1  | net ip <interface name>   |        sets the ip to the interface |
-2  | net netmask <interface name> |     sets the netmask to the interface |
-3  | net ping <ip address>  |          sends a ping request to the ip address |
+1  | net ip `interface name`   |        sets the ip to the interface |
+2  | net netmask `interface name` |     sets the netmask to the interface |
+3  | net ping `ip address`  |          sends a ping request to the ip address |
 
 #### 4. clear: (needs privileges)
 no | command | description |
