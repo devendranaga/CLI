@@ -20,7 +20,7 @@ int cli_service_send_response(int sock,
                               CliCommands_t cmd,
                               CliSubCommands_t subcmd,
                               CliCommandRes_t result,
-                              uint8_t *data, int len)
+                              char *data, int len)
 {
     uint8_t buf[1000];
     struct cli_interface *intf;
@@ -186,6 +186,9 @@ void libev_client_data_recv(int sock, void *app_arg)
             }
             break;
         }
+        case CLI_INTF_CMD_RESP: {
+            break;
+        }
     }
 }
 
@@ -206,12 +209,13 @@ void libev_service_client(int sock, void *app_arg)
 
 int main(int argc, char **argv)
 {
-    int ret;
     struct cli_service_priv *priv;
 
     priv = calloc(1, sizeof(struct cli_service_priv));
-    if (!priv)
+    if (!priv) {
+        cli_memalloc_err(__FILE__, __func__, __LINE__);
         return -1;
+    }
 
     cli_service_cmdargs_parse(argc, argv);
 
@@ -229,3 +233,4 @@ int main(int argc, char **argv)
 
     return 0;
 }
+

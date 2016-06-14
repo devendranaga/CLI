@@ -1,13 +1,15 @@
 #ifndef __CLISRV_H__
 #define __CLISRV_H__
 
+#include <cliutil.h>
+
 #define CLI_SRV_SOCK "/tmp/clisrv.sock"
 #define CLI_SRV_MAXCONN 4
 
 struct cli_service_priv {
-	void *libev_magic;
-	int cli_service_sock;
-	int cli_client;
+    void *libev_magic;
+    int cli_service_sock;
+    int cli_client;
 };
 
 #endif

@@ -54,7 +54,7 @@ void* libev_system_init()
 
     sock_context = calloc(1, sizeof(struct libev_socket_context));
     if (!sock_context)
-        return NULL;
+        goto err;
 
     context->sock_context = sock_context;
 
@@ -62,14 +62,17 @@ void* libev_system_init()
 
     sock_context->sfd = signalfd(-1, &sock_context->sigmask, 0);
     if (sock_context->sfd < 0)
-        return NULL;
+        goto err;
 
     FD_SET(sock_context->sfd, &sock_context->fds);
 
     return context;
 
 err:
-    free(context);
+    if (sock_context)
+        free(sock_context);
+    if (context)
+        free(context);
     return NULL;
 }
 
@@ -117,6 +120,10 @@ int _libev_register_sock(
         case LIBEV_SOCK_TYPE_TCP_RECV:
             sock_node->recv_func = cbfunc;
         break;
+        case LIBEV_SOCK_TYPE_UDP:
+        case LIBEV_SOCK_TYPE_UDP_UNIX:
+        case LIBEV_SOCK_TYPE_TCP:
+            return -1;
     }
     sock_node->sock = sock;
     sock_node->socktype = socktype;
@@ -221,6 +228,10 @@ void libev_sock_event_func(fd_set *allfd, struct libev_context *context)
                 case LIBEV_SOCK_TYPE_TCP_RECV:
                     libev_recv_func(context, sock_node);
                 break;
+                case LIBEV_SOCK_TYPE_TCP:
+                case LIBEV_SOCK_TYPE_UDP:
+                case LIBEV_SOCK_TYPE_UDP_UNIX:
+                return;
             }
             FD_SET(sock_node->sock, &sock_context->fds);
         }
@@ -236,6 +247,8 @@ int libev_signal_func(struct libev_context *context)
     ret = read(sock_context->sfd, &siginfo, sizeof(siginfo));
     if (ret == sizeof(siginfo))  {
     }
+
+    return 0;
 }
 
 void libev_main(void *ctx)

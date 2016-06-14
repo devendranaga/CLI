@@ -74,7 +74,7 @@ newl:
 static struct clicmds {
     struct cli_commands *cmd;
 } _cmds[] = {
-    &show_cmd,
+    &show_cmd
 };
 
 int cli_process_command(
@@ -94,6 +94,8 @@ int cli_process_command(
             cmd->cmdfunc(ss, sslen, cmd, priv);
         }
     }
+
+    return 0;
 }
 
 int cli_parser(struct cli_client_priv *priv)
@@ -169,3 +171,4 @@ int main(int argc, char **argv)
 
     return -1;
 }
+
