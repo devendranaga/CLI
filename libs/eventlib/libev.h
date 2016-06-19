@@ -1,6 +1,7 @@
 #ifndef __LIBEV_H__
 #define __LIBEV_H__
 
+#include <errno.h>
 #include "cliincludes.h"
 
 typedef enum {

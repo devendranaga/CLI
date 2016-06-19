@@ -78,6 +78,15 @@ static struct clicmds {
     &help_cmd,
 };
 
+void cli_get_cmdlist(void (*cbfunc)(struct cli_commands *))
+{
+    int i;
+
+    for (i = 0; i < sizeof(_cmds) / sizeof(_cmds[0]); i ++) {
+        cbfunc(_cmds[i].cmd);
+    }
+}
+
 int cli_process_command(
                 struct command_subsections *ss,
                 int sslen,
@@ -87,6 +96,10 @@ int cli_process_command(
     int len = sizeof(_cmds) / sizeof(_cmds[0]);
     int i;
     char *main_cmd = ss[0].section;
+
+    if (!strcasecmp(main_cmd, "?")) {
+        strcpy(main_cmd, "help");
+    }
 
     for (i = 0; i < len; i++) {
         struct cli_commands *cmd = _cmds[i].cmd;
@@ -119,7 +132,7 @@ int cli_parser(struct cli_client_priv *priv)
                                 strlen(input),
                                 priv
                                        );
-#ifndef CONFIG_CLI_DEBUG
+#ifdef CONFIG_CLI_DEBUG
         print_secs(sections, parsed_len);
 #endif
         cli_process_command(sections, parsed_len, priv);
@@ -160,10 +173,6 @@ int main(int argc, char **argv)
     // signal(SIGPIPE, SIG_IGN);
 
     cli_client_cmdline_opts_parse(argc, argv, priv);
-
-    priv->libev_priv = libev_system_init();
-    if (!priv->libev_priv)
-        return -1;
 
     ret = cli_client_initiate_server_conn(priv);
     if (ret)

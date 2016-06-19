@@ -60,6 +60,8 @@ void* libev_system_init()
 
     sigemptyset(&sock_context->sigmask);
 
+    FD_ZERO(&sock_context->fds);
+
     // register termination handlers
     sigaddset(&sock_context->sigmask, SIGINT);
     sigaddset(&sock_context->sigmask, SIGQUIT);
@@ -130,8 +132,10 @@ int _libev_register_sock(
         break;
         case LIBEV_SOCK_TYPE_UDP:
         case LIBEV_SOCK_TYPE_UDP_UNIX:
-        case LIBEV_SOCK_TYPE_TCP:
+        case LIBEV_SOCK_TYPE_TCP: {
+            free(sock_node);
             return -1;
+        }
     }
     sock_node->sock = sock;
     sock_node->socktype = socktype;
@@ -180,6 +184,49 @@ libev_get_socket_node_by_sock(int sock, struct libev_context *context)
     return NULL;
 }
 
+static void _libev_find_max_fd(struct libev_context *context)
+{
+    struct libev_socket_context *sock_context = context->sock_context;
+    struct libev_socket_list *sock_node;
+    int max_fd = 0;
+
+    for (sock_node = sock_context->head;
+            sock_node;
+            sock_node = sock_node->next) {
+        if (sock_node->sock > max_fd)
+            max_fd = sock_node->sock;
+    }
+
+    context->sock_context->max_fd = max_fd;
+}
+
+static void _libev_free_sock_node(struct libev_context *context,
+                                  struct libev_socket_list *node)
+{
+    struct libev_socket_context *sock_context = context->sock_context;
+    struct libev_socket_list *sock_node = sock_context->head;
+    struct libev_socket_list *sock_node_prev;
+
+    if (sock_node == node) {
+        sock_context->head = sock_node->next;
+        free(node);
+        return;
+    }
+
+    sock_node_prev = sock_node;
+
+    while (sock_node) {
+        if (sock_node == node) {
+            sock_node_prev->next = sock_node->next;
+            free(node);
+            return;
+        }
+
+        sock_node_prev = sock_node;
+        sock_node = sock_node->next;
+    }
+}
+
 void _libev_unregister_sock(int sock, void *app_arg)
 {
     struct libev_context *context = app_arg;
@@ -189,8 +236,10 @@ void _libev_unregister_sock(int sock, void *app_arg)
     if (!node)
         return;
 
+    printf("unregister %d\n", sock);
     FD_CLR(node->sock, &context->sock_context->fds);
-
+    _libev_free_sock_node(context, node);
+    _libev_find_max_fd(context);
 }
 
 void libev_unregister_sock(int sock, void *app_arg)
@@ -278,10 +327,11 @@ void libev_main(void *ctx)
     for (;;) {
         allfd = context->sock_context->fds;
 
-        ret = select(context->sock_context->max_fd + 1, &allfd, NULL, NULL, &tv);
+        ret = select(context->sock_context->max_fd + 1,
+                      &allfd, NULL, NULL, NULL);
+        printf("Ret %d\n", ret);
         if (ret > 0) {
             if (FD_ISSET(context->sock_context->sfd, &allfd)) {
-                printf("called sfd\n");
                 ret = libev_signal_func(context);
                 if (ret) {
                     fprintf(stderr, "Term signal received\n");
@@ -291,6 +341,9 @@ void libev_main(void *ctx)
                 libev_sock_event_func(&allfd, context);
             }
         } else if (ret == 0) {
+        } else if (ret < 0) {
+            fprintf(stderr, "Exception occured %s\n", strerror(errno));
+            return;
         }
     }
 }
@@ -359,7 +412,10 @@ int libev_create_unix_tcp_conn(char *path)
     srv.sun_family = AF_UNIX;
     strcpy(srv.sun_path, path);
 
-    if (connect(sock, (struct sockaddr *)&srv, strlen(srv.sun_path) + sizeof(srv.sun_family)) < 0) {
+    if (connect(sock,
+                (struct sockaddr *)&srv,
+                strlen(srv.sun_path) +
+                sizeof(srv.sun_family)) < 0) {
         perror("connect");
         goto err;
     }

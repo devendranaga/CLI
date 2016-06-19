@@ -152,6 +152,10 @@ void libev_client_data_recv(int sock, void *app_arg)
     if (len <= 0) {
         libev_unregister_sock(sock, priv->libev_magic);
         close(sock);
+        priv->cli_client = -1;
+        // no more client process.. let us stop because
+        // we do not support multi-clients
+        exit(1);
     }
 
     intf = (struct cli_interface *)data;
