@@ -60,6 +60,14 @@ void* libev_system_init()
 
     sigemptyset(&sock_context->sigmask);
 
+    // register termination handlers
+    sigaddset(&sock_context->sigmask, SIGINT);
+    sigaddset(&sock_context->sigmask, SIGQUIT);
+    sigaddset(&sock_context->sigmask, SIGTERM);
+
+    if (sigprocmask(SIG_BLOCK, &sock_context->sigmask, NULL))
+        goto err;
+
     sock_context->sfd = signalfd(-1, &sock_context->sigmask, 0);
     if (sock_context->sfd < 0)
         goto err;
@@ -243,12 +251,21 @@ int libev_signal_func(struct libev_context *context)
     struct signalfd_siginfo siginfo;
     struct libev_socket_context *sock_context = context->sock_context;
     int ret;
+    int term_signal = 0;
 
     ret = read(sock_context->sfd, &siginfo, sizeof(siginfo));
     if (ret == sizeof(siginfo))  {
+        if (siginfo.ssi_signo == SIGINT) {
+            term_signal = 1;
+        } else if (siginfo.ssi_signo == SIGQUIT) {
+            term_signal = 1;
+        } else if (siginfo.ssi_signo == SIGTERM) {
+            term_signal = 1;
+        }
+    } else {
     }
 
-    return 0;
+    return term_signal;
 }
 
 void libev_main(void *ctx)
@@ -264,6 +281,12 @@ void libev_main(void *ctx)
         ret = select(context->sock_context->max_fd + 1, &allfd, NULL, NULL, &tv);
         if (ret > 0) {
             if (FD_ISSET(context->sock_context->sfd, &allfd)) {
+                printf("called sfd\n");
+                ret = libev_signal_func(context);
+                if (ret) {
+                    fprintf(stderr, "Term signal received\n");
+                    return;
+                }
             } else {
                 libev_sock_event_func(&allfd, context);
             }

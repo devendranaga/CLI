@@ -74,7 +74,8 @@ newl:
 static struct clicmds {
     struct cli_commands *cmd;
 } _cmds[] = {
-    &show_cmd
+    &show_cmd,
+    &help_cmd,
 };
 
 int cli_process_command(
@@ -118,7 +119,7 @@ int cli_parser(struct cli_client_priv *priv)
                                 strlen(input),
                                 priv
                                        );
-#ifdef CONFIG_CLI_DEBUG
+#ifndef CONFIG_CLI_DEBUG
         print_secs(sections, parsed_len);
 #endif
         cli_process_command(sections, parsed_len, priv);
@@ -130,6 +131,7 @@ int cli_parser(struct cli_client_priv *priv)
 int cli_client_initiate_server_conn(struct cli_client_priv *priv)
 {
     priv->server_conn = libev_create_unix_tcp_conn(CLI_SRV_SOCK);
+
     if (priv->server_conn < 0) {
         fprintf(stderr, "failed to initiate CLI service connection\n");
         return -1;

@@ -14,8 +14,8 @@ typedef enum {
 } CliCommandRes_t;
 
 typedef enum {
-    CLI_PRIV_NO_PRIV,
-    CLI_PRIV_SU_PRIV,
+    CLI_PRIV_NO_PRIV,       // not privileged
+    CLI_PRIV_SU_PRIV,       // privileged
 } CliPriv_t;
 
 typedef enum {

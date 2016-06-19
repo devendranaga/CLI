@@ -3,6 +3,7 @@ CLI_SERVICE_SRC += service/clisrv.c
 CLI_SERVICE_SRC += util.c
 
 CLI_CLIENT_SRC += client/cli_show.c
+CLI_CLIENT_SRC += client/cli_help.c
 CLI_CLIENT_SRC += client/clicli.c
 CLI_CLIENT_SRC += util.c
 
