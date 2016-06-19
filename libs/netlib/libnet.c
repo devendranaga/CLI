@@ -1,3 +1,13 @@
+#include <stdio.h>
+#include <stdint.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <netinet/in.h>
+#include <net/if.h>
+#include <arpa/inet.h>
 #include "cliincludes.h"
 #include "libnet.h"
 
@@ -48,6 +58,33 @@ int libnet_get_all_ifs(void *priv, struct libnet_if **list)
     *list = new_list;
     freeifaddrs(iflist);
 
+    return 0;
+}
+
+int libnet_get_if_ipv4(void *priv, char *ipaddr, char *ifname)
+{
+    int sk;
+    char *ip;
+    struct ifreq ifr;
+
+    sk = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sk < 0)
+        return -1;
+
+    memset(&ifr, 0, sizeof(ifr));
+
+    ifr.ifr_addr.sa_family = AF_INET;
+    strcpy(ifr.ifr_name, ifname);
+
+    if (ioctl(sk, SIOCGIFADDR, &ifr) < 0) {
+        close(sk);
+        return -1;
+    }
+
+    ip = inet_ntoa((((struct sockaddr_in *)&ifr.ifr_addr))->sin_addr);
+    strcpy(ipaddr, ip);
+
+    close(sk);
     return 0;
 }
 

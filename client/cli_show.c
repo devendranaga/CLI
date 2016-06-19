@@ -24,6 +24,17 @@ void cli_service_help_show_cli_version(
                  struct cli_commands *cmd,
                  void *priv);
 
+void cli_service_help_show_if_ip(
+                 int tab_level,
+                 struct cli_commands *cmd,
+                 void *priv);
+
+void cli_service_show_if_ip(
+                 struct command_subsections *ss,
+                 int args_len,
+                 struct cli_commands *cmd,
+                 void *priv);
+
 void cli_service_help_show(
                  int tab_level,
                  struct cli_commands *cmd,
@@ -82,6 +93,15 @@ struct cli_commands show_subcmd[] = {
         CLI_PRIV_NO_PRIV,
         cli_service_help_show_cli_version,
         cli_service_show_cli_version,
+        NULL,
+        0
+    },
+
+    {
+        "interface",
+        CLI_PRIV_NO_PRIV,
+        cli_service_help_show_if_ip,
+        cli_service_show_if_ip,
         NULL,
         0
     },
@@ -236,6 +256,12 @@ void cli_service_show_date(
     }
 }
 
+void cli_service_display_if_ip(struct cli_interface_cmdresp *resp,
+                            void *priv)
+{
+    fprintf(stderr, "    IPv4: [%s]\n", resp->data);
+}
+
 void cli_service_show_interfaces_resp(struct cli_interface_cmdresp *resp,
                                       void *priv)
 {
@@ -290,6 +316,51 @@ void cli_service_show_interfaces(
     }
 }
 
+void cli_service_show_if_ip(
+                 struct command_subsections *ss,
+                 int args_len,
+                 struct cli_commands *cmd,
+                 void *priv)
+{
+    int ret;
+    int i;
+    struct cli_interface_cmdreq *req;
+    struct cli_interface *intf;
+    uint8_t buff[1000];
+
+    memset(buff, 0, sizeof(buff));
+
+    intf = (struct cli_interface *)buff;
+
+    intf->type = CLI_INTF_CMD_REQ;
+    intf->len = sizeof(struct cli_interface_cmdreq);
+
+    req = (struct cli_interface_cmdreq *)intf->data;
+
+    req->command = CLI_COMMAND_SHOW;
+    req->sub_command = CLI_SUBCOMMAND_SHOW_IF_IP;
+    req->priv = cmd->priv;
+
+    printf("ss[3] %s\n", ss[3].section);
+    if (!strcasecmp(ss[2].section, "ipv4")) {
+        strcpy(req->data, ss[3].section);
+        req->datalen = strlen(req->data);
+        intf->len += req->datalen;
+    } else {
+        fprintf(stderr, "option <%s> not supported\n", ss[2].section);
+        return;
+    }
+
+    struct cli_client_priv *context= priv;
+
+    ret = send(context->server_conn, buff, sizeof(*intf) + intf->len, 0);
+    if (ret > 0) {
+        cli_service_recv_timeout(5, context->server_conn,
+                                 ss, args_len, cmd, priv,
+                                 cli_service_display_if_ip);
+    }
+}
+
 void cli_service_show(
                      struct command_subsections *ss,
                      int args_len,
@@ -334,7 +405,6 @@ void cli_service_help_show_interfaces(
     fprintf(stderr, "interfaces \t\t <show the network interfaces>\n");
 }
 
-
 void cli_service_help_show_cli_version(
                          int tab_level,
                          struct cli_commands *cmd,
@@ -342,6 +412,15 @@ void cli_service_help_show_cli_version(
                                       )
 {
     fprintf(stderr, "cli_version \t\t <show the cli version>\n");
+}
+
+void cli_service_help_show_if_ip(
+                         int tab_level,
+                         struct cli_commands *cmd,
+                         void *priv)
+{
+    fprintf(stderr, "interface [interface-name] \t\t "
+                        "show network interface ipv4 address\n");
 }
 
 void cli_service_help_show(int tab_level, struct cli_commands *cmd, void *priv)

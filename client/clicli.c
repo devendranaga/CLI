@@ -120,6 +120,7 @@ int cli_parser(struct cli_client_priv *priv)
         int sec_len = sizeof(sections) / sizeof(sections[0]);
         int parsed_len;
 
+        memset(input, 0, sizeof(input));
         fprintf(stderr, "%s ", cli_name);
         fgets(input, sizeof(input), stdin);
 

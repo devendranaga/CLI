@@ -106,6 +106,27 @@ static int __cli_service_show_cli_version(int sock, CliCommands_t cmd,
     return cli_service_send_response(sock, cmd, subcmd, res, exec_buf, ret_len);
 }
 
+static int __cli_service_show_if_ip(int sock, CliCommands_t cmd,
+                                    CliSubCommands_t subcmd,
+                                    uint8_t *data, int datalen,
+                                    struct cli_service_priv *priv)
+{
+    int ret;
+    char ip[100];
+    CliCommandRes_t res;
+
+    printf("%s %u\n", __func__, __LINE__);
+    ret = libnet_get_if_ipv4(priv, ip, data);
+    if (ret)
+        res = CLI_COMMAND_RES_FAIL;
+    else
+        res = CLI_COMMAND_RES_SUCCESS;
+
+    printf("interface %s ip %s\n", data, ip);
+
+    return cli_service_send_response(sock, cmd, subcmd, res, ip, strlen(ip) + 1);
+}
+
 static int __cli_service_show_interfaces(int sock, CliCommands_t cmd,
                                          CliSubCommands_t subcmd,
                                          struct cli_service_priv *priv)
@@ -148,6 +169,8 @@ void libev_client_data_recv(int sock, void *app_arg)
     uint8_t data[1000];
     int len;
 
+    memset(data, 0, sizeof(data));
+
     len = recv(sock, data, sizeof(data), 0);
     if (len <= 0) {
         libev_unregister_sock(sock, priv->libev_magic);
@@ -182,6 +205,17 @@ void libev_client_data_recv(int sock, void *app_arg)
                             __cli_service_show_interfaces(sock, req->command,
                                                           req->sub_command,
                                                           priv);
+                            break;
+                        }
+                        case CLI_SUBCOMMAND_SHOW_IF_IP: {
+                            if (req->datalen <= 0) {
+                                fprintf(stderr, "server: invalid data length\n");
+                                return -1;
+                            }
+                            __cli_service_show_if_ip(sock, req->command,
+                                                     req->sub_command,
+                                                     req->data, req->datalen,
+                                                     priv);
                             break;
                         }
                     }

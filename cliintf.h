@@ -26,6 +26,7 @@ typedef enum {
     CLI_SUBCOMMAND_SHOW_DATE,
     CLI_SUBCOMMAND_SHOW_CLI_VER,
     CLI_SUBCOMMAND_SHOW_INTERFACES,
+    CLI_SUBCOMMAND_SHOW_IF_IP,
 } CliSubCommands_t;
 
 struct cli_iflist {
