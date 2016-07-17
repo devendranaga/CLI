@@ -261,6 +261,9 @@ int main(int argc, char **argv)
     if (!priv->libev_magic)
         return -1;
 
+    if (cli_service_auth_init(priv))
+        return -1;
+
     priv->cli_service_sock = libev_unix_tcp_init(priv->libev_magic,
                                                  CLI_SRV_SOCK,
                                                  libev_service_client, priv);

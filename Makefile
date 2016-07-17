@@ -1,5 +1,6 @@
 
 CLI_SERVICE_SRC += service/clisrv.c
+CLI_SERVICE_SRC += service/auth.c
 CLI_SERVICE_SRC += util.c
 
 CLI_CLIENT_SRC += client/cli_show.c

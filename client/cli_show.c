@@ -29,7 +29,7 @@ void cli_service_help_show_if_ip(
                  struct cli_commands *cmd,
                  void *priv);
 
-void cli_service_show_if_ip(
+void cli_service_show_if_subcmd(
                  struct command_subsections *ss,
                  int args_len,
                  struct cli_commands *cmd,
@@ -101,7 +101,7 @@ struct cli_commands show_subcmd[] = {
         "interface",
         CLI_PRIV_NO_PRIV,
         cli_service_help_show_if_ip,
-        cli_service_show_if_ip,
+        cli_service_show_if_subcmd,
         NULL,
         0
     },
@@ -316,7 +316,7 @@ void cli_service_show_interfaces(
     }
 }
 
-void cli_service_show_if_ip(
+void cli_service_show_if_subcmd(
                  struct command_subsections *ss,
                  int args_len,
                  struct cli_commands *cmd,
