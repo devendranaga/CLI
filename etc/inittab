@@ -1,0 +1,5 @@
+#### replace the /bin/login with the following
+### on OpenWRT, i did this... similar stuff can be done over to the
+### other embedded platforms
+
+ttyS0::askfirst:/bin/cli_client

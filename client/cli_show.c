@@ -341,7 +341,6 @@ void cli_service_show_if_ip(
     req->sub_command = CLI_SUBCOMMAND_SHOW_IF_IP;
     req->priv = cmd->priv;
 
-    printf("ss[3] %s\n", ss[3].section);
     if (!strcasecmp(ss[2].section, "ipv4")) {
         strcpy(req->data, ss[3].section);
         req->datalen = strlen(req->data);
@@ -420,7 +419,7 @@ void cli_service_help_show_if_ip(
                          void *priv)
 {
     fprintf(stderr, "interface [interface-name] \t\t "
-                        "show network interface ipv4 address\n");
+                        "example: show interface ipv4 address\n");
 }
 
 void cli_service_help_show(int tab_level, struct cli_commands *cmd, void *priv)

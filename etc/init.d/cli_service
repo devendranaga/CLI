@@ -1,0 +1,14 @@
+#!/bin/sh /etc/rc.common
+START=10
+
+### sample /etc/init.d/cli_service file
+###
+### applies for OpenWRT .. can easily be applied to any other platform
+start() {
+    /bin/cli_service | logger &
+}
+
+stop() {
+    killall /bin/cli_service
+}
+

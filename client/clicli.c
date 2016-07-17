@@ -144,7 +144,20 @@ int cli_parser(struct cli_client_priv *priv)
 
 int cli_client_initiate_server_conn(struct cli_client_priv *priv)
 {
-    priv->server_conn = libev_create_unix_tcp_conn(CLI_SRV_SOCK);
+    int i;
+    int retries = 10;
+
+    // this is to allow CLI to retry connecting to the server
+    // when the cli command is run by the inittab
+    for (i = 0; i < retries; i ++) {
+        priv->server_conn = libev_create_unix_tcp_conn(CLI_SRV_SOCK);
+
+        if (priv->server_conn > 0)
+            break;
+        else
+            fprintf(stderr, "failed to initiate CLI service connection : "
+                                                "retry attempt [%d]\n", i);
+    }
 
     if (priv->server_conn < 0) {
         fprintf(stderr, "failed to initiate CLI service connection\n");
