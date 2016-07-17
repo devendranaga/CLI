@@ -25,11 +25,14 @@ no | command | description|
 20 | show gps brief |                  shows brief information about gps |
 21 | show gps position |              shows gps position |
 22 | show gps satellites |             shows number of gps satellites |
-23 | show users |                      shows list of users (needs privileges) |
+23 | show users |                      shows list of users (need privileges) |
 24 | show hw_version |                 shows hardware version |
 25 | show hw_revision |                shows hardware revision |
 26 | show hostname |  displays `hostname` of the device |
 27 | show firewall |  display firewall |
+28 | show uptime | displays system uptime |
+29 | show core-dumps | displays the system coredump files |
+30 | show users | displays list of available users (need privileges) |
 
 #### 2. help:
 no | description |
@@ -40,9 +43,12 @@ no | description |
 #### 3. net: (needs privileges)
 no | command | description |
 ---|---------|-------------|
-1  | net ip `interface name`   |        sets the ip to the interface |
+1  | net ip `interface name`   |        sets the ip (ipv4 or ipv6) to the interface |
 2  | net netmask `interface name` |     sets the netmask to the interface |
 3  | net ping `ip address`  |          sends a ping request to the ip address |
+4  | net ssh `ip address` `port` | performs an ssh connection to the ip address at the port |
+5  | net interface up `interface name` | make the `interface name` up |
+6  | net interface down `interface name` | make the `interface name` down |
 
 #### 4. clear: (needs privileges)
 no | command | description |
@@ -96,5 +102,23 @@ no | command | description |
 #### 12. commit:
 no | command | description |
 ---|---------|-------------|
-1  | commit  | commits the in-memory configuration |
+1  | commit  | commits the in-memory configuration and reloads the processes that have the changed configuration |
 2  | commit `config number` | commits the displayed configuration item via `configure view` |
+
+#### 13. start:
+
+no | command | description |
+---|---------|-------------|
+1  | firewall | starts the firewall if not started already |
+
+#### 14. stop:
+
+no | command | description |
+---|---------|-------------|
+1  | firewall | stops the firewall if not stopped already |
+
+#### 15. exec:
+
+no | command | description |
+---|---------|-------------|
+1  | exec `script name` | execute the script that has the list of CLI commands |
