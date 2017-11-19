@@ -321,7 +321,6 @@ void libev_main(void *ctx)
 {
     struct libev_context *context = ctx;
     fd_set allfd;
-    struct timeval tv = {0, 0};
     int ret;
 
     for (;;) {

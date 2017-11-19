@@ -24,4 +24,6 @@ struct cli_service_priv {
     struct cli_auth_mgr *auth_mgr;
 };
 
+int cli_service_auth_init(struct cli_service_priv *priv);
+
 #endif

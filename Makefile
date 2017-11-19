@@ -19,7 +19,7 @@ CLI_SERVICE_NAME = cli_service
 CLI_CC = gcc
 CLI_AR = ar
 CLI_AR_ARGS = rcv
-CLI_CFLAGS = -Wall
+CLI_CFLAGS = -Wall -Werror -Wextra -Wshadow -Wno-unused-parameter
 CLI_INCL = -I. -Ilibs/eventlib/ -Ilibs/netlib/ -Iclient/
 
 CLI_SERVICE_OBJ = $(patsubst %.c, %.o, ${CLI_SERVICE_SRC})

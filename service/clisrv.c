@@ -115,8 +115,7 @@ static int __cli_service_show_if_ip(int sock, CliCommands_t cmd,
     char ip[100];
     CliCommandRes_t res;
 
-    printf("%s %u\n", __func__, __LINE__);
-    ret = libnet_get_if_ipv4(priv, ip, data);
+    ret = libnet_get_if_ipv4(priv, ip, (char *)data);
     if (ret)
         res = CLI_COMMAND_RES_FAIL;
     else
@@ -210,7 +209,7 @@ void libev_client_data_recv(int sock, void *app_arg)
                         case CLI_SUBCOMMAND_SHOW_IF_IP: {
                             if (req->datalen <= 0) {
                                 fprintf(stderr, "server: invalid data length\n");
-                                return -1;
+                                return;
                             }
                             __cli_service_show_if_ip(sock, req->command,
                                                      req->sub_command,

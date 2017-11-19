@@ -323,7 +323,6 @@ void cli_service_show_if_subcmd(
                  void *priv)
 {
     int ret;
-    int i;
     struct cli_interface_cmdreq *req;
     struct cli_interface *intf;
     uint8_t buff[1000];
@@ -342,8 +341,8 @@ void cli_service_show_if_subcmd(
     req->priv = cmd->priv;
 
     if (!strcasecmp(ss[2].section, "ipv4")) {
-        strcpy(req->data, ss[3].section);
-        req->datalen = strlen(req->data);
+        strcpy((char *)req->data, ss[3].section);
+        req->datalen = strlen(ss[3].section);
         intf->len += req->datalen;
     } else {
         fprintf(stderr, "option <%s> not supported\n", ss[2].section);

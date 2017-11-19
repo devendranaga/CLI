@@ -74,13 +74,13 @@ newl:
 static struct clicmds {
     struct cli_commands *cmd;
 } _cmds[] = {
-    &show_cmd,
-    &help_cmd,
+    {&show_cmd},
+    {&help_cmd},
 };
 
 void cli_get_cmdlist(void (*cbfunc)(struct cli_commands *))
 {
-    int i;
+    uint32_t i;
 
     for (i = 0; i < sizeof(_cmds) / sizeof(_cmds[0]); i ++) {
         cbfunc(_cmds[i].cmd);

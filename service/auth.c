@@ -8,13 +8,10 @@
 static int __cli_service_auth_parse_line(char *line,
                                          struct cli_service_priv *priv)
 {
-    int ret;
-    char *ptr;
     int len = strlen(line);
     char username[100];
     char passwd[100];
     char admin[100];
-    int counter = 0;
     int i = 0;
 
     struct cli_auth_mgr *auth_mgr = priv->auth_mgr;
@@ -37,7 +34,7 @@ static int __cli_service_auth_parse_line(char *line,
         line ++;
     } else {
         // no passwd and no auth ??
-        return;
+        return -1;
     }
 
     i = 0;
@@ -53,7 +50,7 @@ static int __cli_service_auth_parse_line(char *line,
         line ++;
     } else {
         // no auth ??
-        return;
+        return -1;
     }
 
     i = 0;
@@ -73,7 +70,7 @@ static int __cli_service_auth_parse_line(char *line,
 
     db_node = calloc(1, sizeof(struct cli_auth_db));
     if (!db_node) {
-        return;
+        return -1;
     }
 
     db_node->usrname = strdup(username);
