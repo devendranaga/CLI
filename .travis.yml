@@ -1,6 +1,8 @@
 language: c
 compiler: gcc
-sudo: true
 before install:
-  - sudo pip install cpp-coveralls
+  - pip install --user cpp-coveralls
 script: make clean ; make all
+
+after_success:
+  - coveralls --gcov-options '\-lp'
