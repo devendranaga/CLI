@@ -19,14 +19,14 @@ CLI_SERVICE_NAME = cli_service
 CLI_CC = gcc
 CLI_AR = ar
 CLI_AR_ARGS = rcv
-CLI_CFLAGS = -Wall -Werror -Wextra -Wshadow -Wno-unused-parameter
+CLI_CFLAGS = -Wall -Werror -Wextra -Wshadow -Wno-unused-parameter -fprofile-arcs -ftest-coverage -coverage
 CLI_INCL = -I. -Ilibs/eventlib/ -Ilibs/netlib/ -Iclient/
 
 CLI_SERVICE_OBJ = $(patsubst %.c, %.o, ${CLI_SERVICE_SRC})
 CLI_CLIENT_OBJ = $(patsubst %.c, %.o, ${CLI_CLIENT_SRC})
 CLI_LIBEV_OBJ = $(patsubst %.c, %.o, ${CLI_LIBEV_SRC})
 CLI_LIBNET_OBJ = $(patsubst %.c, %.o, ${CLI_LIBNET_SRC})
-CLI_LIBS+= -pthread -lrt -lm
+CLI_LIBS+= -pthread -lrt -lm -pg -lgcov -coverage
 
 all: $(LIBEVCLI_LIB_NAME) $(LIBNETCLI_LIB_NAME) $(CLI_CLIENT_NAME) $(CLI_SERVICE_NAME)
 
