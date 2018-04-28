@@ -142,6 +142,16 @@ int cli_parser(struct cli_client_priv *priv)
     return -1;
 }
 
+/**
+ * @brief - create server connection
+ * @param priv - cli private context
+ *
+ * @par Description - 
+ * create the server connection - if connection fails, retry for retry
+ * times and fail if still did not connect.
+ *
+ * @return returns 0 on success -1 on failure
+ */
 int cli_client_initiate_server_conn(struct cli_client_priv *priv)
 {
     int i;
@@ -156,11 +166,13 @@ int cli_client_initiate_server_conn(struct cli_client_priv *priv)
             break;
         else
             fprintf(stderr, "failed to initiate CLI service connection : "
-                                                "retry attempt [%d]\n", i);
+                                                "retry attempt [%d] @ %s %u\n",
+				i, __func__, __LINE__);
     }
 
     if (priv->server_conn < 0) {
-        fprintf(stderr, "failed to initiate CLI service connection\n");
+        fprintf(stderr, "failed to initiate CLI service connection @ %s %u\n",
+				__func__, __LINE__);
         return -1;
     }
 
@@ -172,6 +184,9 @@ void cli_client_deinitiate_server_conn(struct cli_client_priv *priv)
     close(priv->server_conn);
 }
 
+/**
+ * @brief - main code of client side main code
+ */
 int main(int argc, char **argv)
 {
     int ret;
