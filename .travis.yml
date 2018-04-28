@@ -2,7 +2,9 @@ language: c
 compiler: gcc
 before install:
   - pip install --user cpp-coveralls
+
 script: make clean ; make all
 
 after_success:
+  - pip install --user cpp-coveralls
   - coveralls --gcov-options '\-lp'
