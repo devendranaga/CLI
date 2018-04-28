@@ -3,7 +3,7 @@ compiler: gcc
 before install:
   - pip install --user cpp-coveralls
 
-script: make clean ; make all
+script: bash build.sh
 
 after_success:
   - pip install --user cpp-coveralls
