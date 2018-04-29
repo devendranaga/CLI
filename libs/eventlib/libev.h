@@ -31,6 +31,7 @@ int libev_unix_tcp_init(void *ctx,
                         void (*accept_func)(int sock, void *args),
                         void *app_arg);
 
+int libev_unix_udp_init(void *ctx, char *path);
 void libev_unix_tcp_deinit(void *ctx, int sock);
 int libev_create_unix_tcp_conn(char *path);
 int libev_register_sock(

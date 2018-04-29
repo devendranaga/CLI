@@ -132,6 +132,8 @@ int _libev_register_sock(
         break;
         case LIBEV_SOCK_TYPE_UDP:
         case LIBEV_SOCK_TYPE_UDP_UNIX:
+	    sock_node->recv_func = cbfunc;
+	break;
         case LIBEV_SOCK_TYPE_TCP: {
             free(sock_node);
             return -1;
@@ -153,6 +155,16 @@ int libev_register_tcp_unix_sock(
     return _libev_register_sock(sock, ctx,
                                 app_arg, accept_func,
                                 LIBEV_SOCK_TYPE_TCP_UNIX);
+}
+
+int libev_register_udp_unix_sock(
+		            int sock,
+			    void *ctx
+			    )
+{
+    return _libev_register_sock(sock, ctx,
+		    		NULL, NULL,
+				LIBEV_SOCK_TYPE_UDP_UNIX);
 }
 
 int libev_register_sock(
@@ -372,6 +384,34 @@ int libev_unix_tcp_init(void *ctx, char *path, void (*accept_func)(int sock, voi
 
 err:
     close(sock);
+    return -1;
+}
+
+/**
+ * @brief - creates a unix udp server
+ */
+int libev_unix_udp_init(void *ctx, char *path)
+{
+    int sock;
+    struct sockaddr_un srv;
+    struct libev_context *context = ctx;
+
+    sock = socket(AF_UNIX, SOCK_DGRAM, 0);
+    if (sock < 0)
+	return -1;
+
+    srv.sun_family = AF_UNIX;
+    strcpy(srv.sun_path, path);
+
+    unlink(path);
+
+    if (bind(sock, (struct sockaddr *)&srv, strlen(srv.sun_path) + sizeof(srv.sun_family)) < 0)
+	goto err;
+
+    libev_register_udp_unix_sock(sock, context);
+    return sock;
+
+err:
     return -1;
 }
 

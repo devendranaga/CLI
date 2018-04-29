@@ -22,6 +22,7 @@ int main()
 {
     int server_conn;
     int client_conn;
+    int udp_conn_serv;
     void *handle;
 
     handle = libev_system_init();
@@ -41,6 +42,14 @@ int main()
 	return 0;
     }
 
+    udp_conn_serv = libev_unix_udp_init(handle, "/tmp/udpconn.sock");
+    if (udp_conn_serv < 0) {
+	printf("failed to create server udp @ %s %u\n",
+					__func__, __LINE__);
+	return 0;
+    }
+
+    printf("connection %d of udp\n", udp_conn_serv);
     libev_main(handle);
 
     return 0;
