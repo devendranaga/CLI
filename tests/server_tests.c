@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "libs/eventlib/libev.h"
+#include "libs/utils/utils.h"
 #include <sys/socket.h>
 #include <netinet/in.h>
 
@@ -47,6 +48,12 @@ int main()
 	printf("failed to create server udp @ %s %u\n",
 					__func__, __LINE__);
 	return 0;
+    }
+
+    if (util_api_file_exist("/tmp/udpconn.sock")) {
+	printf("File /tmp/udpconn.sock exist\n");
+    } else {
+	printf("File /tmp/udpconn.sock does not exist\n");
     }
 
     printf("connection %d of udp\n", udp_conn_serv);
