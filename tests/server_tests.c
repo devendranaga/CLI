@@ -50,15 +50,23 @@ int main()
 	return 0;
     }
 
+    // +ve test
     if (util_api_file_exist("/tmp/udpconn.sock")) {
 	printf("File /tmp/udpconn.sock exist\n");
     } else {
 	printf("File /tmp/udpconn.sock does not exist\n");
     }
 
+    // -ve tests
+    util_api_file_exist("/etc/config/test");
+
     printf("connection %d of udp\n", udp_conn_serv);
+
     libev_main(handle);
 
+    libev_unix_tcp_deinit(handle, server_conn);
+    libev_unix_tcp_deinit(handle, client_conn);
+    libev_unix_udp_deinit(handle, udp_conn_serv);
     return 0;
 }
 

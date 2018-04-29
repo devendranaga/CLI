@@ -41,5 +41,7 @@ int libev_register_sock(
                     void (*recv_func)(int sock, void *app_arg)
                        );
 
+void libev_unix_udp_deinit(void *ctx, int sock);
+
 #endif
 

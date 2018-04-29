@@ -271,6 +271,18 @@ void libev_unregister_tcp_unix_sock(int sock, void *ctx)
     FD_CLR(node->sock, &context->sock_context->fds);
 }
 
+void libev_unregister_udp_unix_sock(int sock, void *ctx)
+{
+    struct libev_context *context = ctx;
+    struct libev_socket_list *node;
+
+    node = libev_get_socket_node_by_sock(sock, context);
+    if (!node)
+	return;
+
+    FD_CLR(node->sock, &context->sock_context->fds);
+}
+
 void libev_accept_func(struct libev_context *context,
                        struct libev_socket_list *sock_node)
 {
@@ -470,6 +482,12 @@ void libev_unix_tcp_deinit(void *ctx, int sock)
 {
     close(sock);
     libev_unregister_tcp_unix_sock(sock, ctx);
+}
+
+void libev_unix_udp_deinit(void *ctx, int sock)
+{
+    close(sock);
+    libev_unregister_udp_unix_sock(sock, ctx);
 }
 
 int _libev_signal_register(int sig, struct libev_context *context)
