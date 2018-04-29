@@ -7,4 +7,4 @@ script: bash build.sh
 
 after_success:
   - pip install --user cpp-coveralls
-  - coveralls --gcov-options '\-lp'
+  - coveralls --exclude tests --gcov-options '\-lp'
