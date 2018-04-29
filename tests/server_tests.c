@@ -67,6 +67,9 @@ int main()
     libev_unix_tcp_deinit(handle, server_conn);
     libev_unix_tcp_deinit(handle, client_conn);
     libev_unix_udp_deinit(handle, udp_conn_serv);
+
+    libev_system_deinit(handle);
+
     return 0;
 }
 
